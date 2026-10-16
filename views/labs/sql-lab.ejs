@@ -1,0 +1,161 @@
+<%- include('../partials/head', { title: title, pageTitle: pageTitle, purpose: purpose, breadcrumb: 'Labs / SQL Injection' }) %>
+
+<%
+  // The search FORM follows the global mode — validation always runs in SAFE —
+  // but the RESULT describes the attempt, which the residual-risk model can have
+  // decided differently. Keeping both in view here is what stops the two halves
+  // of the page contradicting each other (see partials/residualRiskBanner.ejs).
+  const effectiveMode = locals.residualRisk === true ? 'VULNERABLE' : mode;
+%>
+
+<% if (isVulnerable) { %>
+  <div class="ws-banner ws-banner--warning">
+    <div class="ws-banner__body">
+      <span class="ws-banner__title">Intentionally insecure behaviour is enabled</span>
+      The search term is concatenated into the SQL string. Local lab testing only.
+    </div>
+  </div>
+<% } %>
+
+<%- include('../partials/residualRiskBanner') %>
+
+<%- include('../partials/protectionPanel', { lab: lab, mode: mode }) %>
+
+<div class="ws-card">
+  <div class="ws-card__title">What this lab shows</div>
+  <p><%= lab.explanation %></p>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">Search the product catalogue</div>
+  <form method="get" action="/labs/sql" class="ws-inline">
+    <div class="ws-inline__grow">
+      <label class="ws-form__label" for="q">Search term</label>
+      <input class="ws-input ws-input--mono" id="q" name="q" type="text" value="<%= term %>" autocomplete="off"
+             aria-describedby="q-help"<% if (mode === 'SAFE') { %> maxlength="<%= maxSearchLength %>"<% } %>>
+      <div class="ws-form__hint" id="q-help">
+        <% if (mode === 'SAFE') { %>
+          Validated to <%= maxSearchLength %> characters with no control characters, then bound as a parameter.
+        <% } else { %>
+          No validation in this mode — the term is concatenated into the SQL string.
+        <% } %>
+      </div>
+    </div>
+    <button class="ws-btn ws-btn--primary" type="submit">Search</button>
+  </form>
+
+  <% for (const error of errors) { %>
+    <div class="ws-banner ws-banner--danger ws-mt-4 ws-mb-0">
+      <div class="ws-banner__body"><%= error.message %></div>
+    </div>
+  <% } %>
+
+  <div class="ws-rule"></div>
+  <div class="ws-examples">
+    <span class="ws-examples__item">
+      Normal search
+      <a href="/labs/sql?q=<%= encodeURIComponent(lab.examples.normal) %>"><code id="sql-example-normal"><%= lab.examples.normal %></code></a>
+      <%- include('../partials/copyButton', { target: 'sql-example-normal', label: 'the normal search term' }) %>
+    </span>
+    <span class="ws-examples__item">
+      Tautology
+      <a href="/labs/sql?q=<%= encodeURIComponent(lab.examples.attack) %>"><code id="sql-example-tautology"><%= lab.examples.attack %></code></a>
+      <%- include('../partials/copyButton', { target: 'sql-example-tautology', label: 'the tautology payload' }) %>
+    </span>
+    <span class="ws-examples__item">
+      Reach for another table
+      <a href="/labs/sql?q=<%= encodeURIComponent(lab.examples.equivalent) %>"><code id="sql-example-union"><%= lab.examples.equivalent %></code></a>
+      <%- include('../partials/copyButton', { target: 'sql-example-union', label: 'the UNION SELECT payload' }) %>
+    </span>
+  </div>
+  <p class="ws-card__note">
+    Each payload has a copy button. The code is ellipsised to fit the row, but the clipboard always gets the complete
+    string.
+  </p>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">Result</div>
+
+  <% if (requestPath) { %>
+    <div class="ws-form__label">Request path — paste this straight into Burp Repeater</div>
+    <div class="ws-payload">
+      <pre class="ws-sql-box" id="request-path"><%= requestPath %></pre>
+      <%- include('../partials/copyButton', { target: 'request-path', label: 'the request path' }) %>
+    </div>
+    <div class="ws-rule"></div>
+  <% } %>
+
+  <% if (!searched) { %>
+    <div class="ws-empty">
+      <div class="ws-empty__title">No search has been run yet</div>
+      Enter a term above, or build the request in Burp Repeater and edit the <code>q</code> parameter.
+    </div>
+  <% } else { %>
+    <div class="ws-result-head">
+      <span class="ws-badge ws-badge--<%= effectiveMode === 'VULNERABLE' ? 'critical' : 'neutral' %> ws-badge--no-dot"><%= effectiveMode %></span>
+      <span class="ws-result-head__meta"><%= rows.length %> row<%= rows.length === 1 ? '' : 's' %> returned</span>
+      <% if (hiddenCount > 0) { %>
+        <span class="ws-badge ws-badge--medium"><%= hiddenCount %> unreleased row<%= hiddenCount === 1 ? '' : 's' %> exposed</span>
+      <% } %>
+      <span class="ws-result-head__spacer"></span>
+      <span class="ws-result-head__meta">
+        <%= effectiveMode === 'VULNERABLE' ? 'Executed statement shown' : 'Parameterized query: ON' %>
+      </span>
+    </div>
+
+    <% if (executedSql) { %>
+      <label class="ws-form__label" for="executed-sql">Statement sent to the database</label>
+      <div class="ws-payload">
+        <pre class="ws-sql-box" id="executed-sql"><%= executedSql %></pre>
+        <button class="ws-copy" type="button" data-copy="#executed-sql">Copy</button>
+      </div>
+    <% } %>
+
+    <% if (rows.length === 0) { %>
+      <div class="ws-empty ws-mt-4">
+        <div class="ws-empty__title">No products matched</div>
+        <% if (effectiveMode === 'SAFE') { %>
+          In SAFE mode an injection payload is a literal string, so it matches nothing.
+        <% } else { %>
+          The payload changed the meaning of the query and matched nothing either way.
+        <% } %>
+      </div>
+    <% } else { %>
+      <div class="ws-table-scroll ws-mt-4">
+        <table class="ws-table">
+          <thead><tr><th>Id</th><th>Name</th><th>Category</th><th class="ws-num">Price</th><th>Description</th></tr></thead>
+          <tbody>
+            <% for (const row of rows) { %>
+              <tr class="<%= row.hidden ? 'ws-hidden-row' : '' %>">
+                <td class="ws-id"><%= row.id %></td>
+                <td>
+                  <%= row.name %>
+                  <% if (row.hidden) { %><span class="ws-badge ws-badge--medium">unreleased</span><% } %>
+                </td>
+                <td class="ws-small"><%= row.category %></td>
+                <td class="ws-num"><%= row.price %></td>
+                <td class="ws-small ws-dim"><%= row.description %></td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+
+    <p class="ws-card__note">
+      Detection runs when the response finishes, so a match reaches the event log a moment after this page renders.
+      <% if (user && user.role === 'ADMIN') { %>
+        <a href="/security/events">Open Security Events</a> to see the recorded incident.
+      <% } else { %>
+        An administrator can see the incident in Security Events.
+      <% } %>
+    </p>
+  <% } %>
+</div>
+
+<%- include('../partials/comparisonTable', { lab: lab }) %>
+
+<p class="ws-small ws-muted"><%= lab.note %></p>
+
+<%- include('../partials/foot') %>

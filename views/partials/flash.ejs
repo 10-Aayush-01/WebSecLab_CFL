@@ -1,0 +1,8 @@
+<% for (const message of flash) {
+  const tone = message.type === 'error' ? 'danger' : (message.type === 'success' ? 'success' : 'info');
+%>
+  <div class="ws-banner ws-banner--<%= tone %>" role="status">
+    <div class="ws-banner__body"><%= message.message %></div>
+    <button class="ws-banner__close" type="button" data-dismiss aria-label="Dismiss message">×</button>
+  </div>
+<% } %>

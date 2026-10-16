@@ -1,0 +1,98 @@
+<%
+  const activeLayout = (typeof layout !== 'undefined' && layout) ? layout : 'app';
+  const isAdmin = user && user.role === 'ADMIN';
+  const crumb = (typeof breadcrumb !== 'undefined' && breadcrumb) ? breadcrumb : '';
+%><!DOCTYPE html>
+<html lang="en"<% if (themeAttribute) { %> data-theme="<%= themeAttribute %>"<% } %>>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#1F3A5F" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0A0E14" media="(prefers-color-scheme: dark)">
+  <meta name="csrf-token" content="<%= csrfToken %>">
+  <title><%= title %> · WebSecLab</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="ws-body">
+  <a class="ws-skip" href="#main">Skip to content</a>
+
+  <header class="ws-topbar">
+    <div class="ws-topbar__inner">
+      <% if (activeLayout === 'app') { %>
+        <button class="ws-nav-toggle" type="button" id="ws-nav-toggle"
+                aria-controls="ws-sidebar" aria-expanded="false" aria-label="Open navigation">
+          <svg class="ws-nav-toggle__open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+          <svg class="ws-nav-toggle__close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+        </button>
+      <% } %>
+
+      <a class="ws-brand" href="/">
+        <span class="ws-brand__mark" aria-hidden="true">W</span>
+        <span>WebSecLab</span>
+      </a>
+
+      <span class="ws-topbar__spacer"></span>
+
+      <div class="ws-topbar__controls">
+      <% if (isAdmin) { %>
+        <form class="ws-mode-switch" method="post" action="/admin/mode"
+              <% if (securityMode !== 'VULNERABLE') { %>data-confirm="Switch the global security mode to VULNERABLE? The three labs become intentionally insecure until you switch back."<% } %>>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="redirectTo" value="<%= currentPath %>">
+          <span class="ws-seg__label">Global mode</span>
+          <div class="ws-seg">
+            <button class="ws-seg__btn <%= securityMode === 'SAFE' ? 'is-active' : '' %>" type="submit"
+                    name="mode" value="SAFE" <%= securityMode === 'SAFE' ? 'disabled' : '' %>>SAFE</button>
+            <button class="ws-seg__btn <%= securityMode === 'VULNERABLE' ? 'is-active' : '' %>" type="submit"
+                    name="mode" value="VULNERABLE" <%= securityMode === 'VULNERABLE' ? 'disabled' : '' %>>VULNERABLE</button>
+          </div>
+        </form>
+      <% } else { %>
+        <%- include('modeBadge') %>
+      <% } %>
+
+      <%- include('themeSwitch') %>
+
+      <% if (user) { %>
+        <span class="ws-topbar__user"><strong><%= user.name %></strong> · <%= user.role %></span>
+        <form method="post" action="/logout" data-confirm="Sign out of WebSecLab?">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="ws-btn ws-btn--ghost ws-topbar-btn" type="submit">Sign out</button>
+        </form>
+      <% } else { %>
+        <a class="ws-btn ws-btn--secondary ws-topbar-btn" href="/login">Sign in</a>
+      <% } %>
+      </div>
+    </div>
+  </header>
+
+  <% if (activeLayout === 'app') { %>
+    <div class="ws-shell">
+      <%- include('sidebar') %>
+      <main class="ws-main" id="main">
+        <div class="ws-page-header">
+          <div class="ws-page-header__text">
+            <nav class="ws-breadcrumb" aria-label="Breadcrumb">
+              <a href="/">WebSecLab</a>
+              <% if (crumb) { %><span aria-hidden="true">/</span><span><%= crumb %></span><% } %>
+            </nav>
+            <h1><%= pageTitle %></h1>
+            <% if (typeof purpose !== 'undefined' && purpose) { %><p class="ws-purpose"><%= purpose %></p><% } %>
+          </div>
+        </div>
+        <%- include('flash') %>
+  <% } else { %>
+    <main class="ws-main--auth" id="main">
+      <div class="ws-auth-brand">
+        <span class="ws-auth-brand__mark" aria-hidden="true">W</span>
+        <span class="ws-auth-brand__text">
+          <span class="ws-auth-brand__name">WebSecLab</span>
+          <span class="ws-auth-brand__tag">Local lab environment</span>
+        </span>
+      </div>
+      <%- include('flash') %>
+  <% } %>

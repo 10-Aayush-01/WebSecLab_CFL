@@ -1,0 +1,24 @@
+<%
+  const activeLayout = (typeof layout !== 'undefined' && layout) ? layout : 'app';
+%>  <% if (activeLayout === 'app') { %>
+      </main>
+    </div>
+  <% } else { %>
+    </main>
+  <% } %>
+
+  <footer class="ws-footer">
+    <span>Educational use only — local lab environment.</span>
+    <span class="ws-footer__spacer"></span>
+    <span class="ws-small">No third-party system is ever a target.</span>
+  </footer>
+
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/app.js"></script>
+  <% if (typeof pageScripts !== 'undefined') { %>
+    <% for (const script of pageScripts) { %><script src="<%= script %>"></script>
+    <% } %>
+  <% } %>
+</body>
+</html>
