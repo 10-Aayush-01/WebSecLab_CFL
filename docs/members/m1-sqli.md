@@ -5,6 +5,7 @@ opening, the architecture, and **SQL injection**. This is the same text as
 `Script 1` in [`../MEMBER_SCRIPTS.md`](../MEMBER_SCRIPTS.md), split out so you can
 print only your own pages.
 
+
 The `Say:` lines are the script — read them out, or paraphrase them, but keep the
 meaning. The `Do:` lines are what your hands are doing while you talk, and they
 never need narrating. **Bold** lines must be said out loud verbatim, because they
