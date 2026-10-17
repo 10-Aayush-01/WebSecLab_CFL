@@ -1,0 +1,185 @@
+<%- include('../partials/head', { title: title, pageTitle: pageTitle, purpose: purpose, breadcrumb: 'Security Events / Incident' }) %>
+
+<div class="ws-card">
+  <div class="ws-card__title">
+    <span>Incident summary</span>
+    <span class="ws-flex">
+      <%- include('../partials/resultBadge', { result: event.result }) %>
+      <%- include('../partials/severityBadge', { severity: event.severity }) %>
+    </span>
+  </div>
+  <dl class="ws-kv ws-kv--rows">
+    <dt>Incident id</dt>
+    <dd>
+      <span class="ws-flex ws-flex-wrap">
+        <span class="ws-mono ws-small" id="incident-id"><%= event.event_uuid %></span>
+        <button class="ws-copy" type="button" data-copy="#incident-id">Copy</button>
+      </span>
+    </dd>
+    <dt>Recorded at</dt>
+    <dd><%= formatTimestamp(event.occurred_at) %></dd>
+    <dt>Attack type</dt>
+    <dd><%= event.attack_type %></dd>
+    <dt>Matched rule</dt>
+    <dd class="ws-mono"><%= event.matched_rule %></dd>
+    <dt>Risk score</dt>
+    <dd>
+      <span class="ws-mono"><%= event.risk_score %></span>
+      <span class="ws-small ws-muted">WebSecLab Educational Risk Score (not CVSS)</span>
+    </dd>
+    <dt>Result</dt>
+    <dd><%= RESULT_LABELS[event.result] || event.result %></dd>
+    <dt>Security mode at the time</dt>
+    <dd><%= event.security_mode %></dd>
+    <dt>Outcome basis</dt>
+    <dd>
+      <% if (event.request_data.outcomeBasis === 'RESIDUAL_RISK') { %>
+        <span class="ws-badge ws-badge--medium ws-badge--no-dot">RESIDUAL_RISK</span>
+        <span class="ws-small ws-muted">the controls were skipped for this attempt by the residual-risk model</span>
+      <% } else { %>
+        <span class="ws-badge ws-badge--neutral ws-badge--no-dot">MODE</span>
+        <span class="ws-small ws-muted">the global mode decided the result outright</span>
+      <% } %>
+    </dd>
+    <dt>Request</dt>
+    <dd class="ws-mono ws-small"><%= event.http_method %> <%= event.endpoint %> → HTTP <%= event.status_code %></dd>
+    <dt>Source address</dt>
+    <dd class="ws-mono ws-small"><%= event.source_ip || 'unknown' %></dd>
+    <dt>Account</dt>
+    <dd>
+      <% if (event.user_email) { %>
+        <%= event.user_email %> <span class="ws-muted ws-small">id <%= event.user_id %>, <%= event.user_name %></span>
+      <% } else { %>
+        <span class="ws-muted">unauthenticated</span>
+      <% } %>
+    </dd>
+  </dl>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">
+    <span>Request evidence</span>
+    <span class="ws-small ws-muted">sanitized at capture</span>
+  </div>
+  <dl class="ws-kv ws-kv--rows">
+    <dt>Parameter</dt>
+    <dd class="ws-mono"><%= event.request_data.parameter || '—' %></dd>
+    <dt>Payload</dt>
+    <dd>
+      <% if (event.request_data.payload) { %>
+        <div class="ws-payload">
+          <pre class="ws-sql-box" id="evidence-payload"><%= event.request_data.payload %></pre>
+          <button class="ws-copy" type="button" data-copy="#evidence-payload">Copy</button>
+        </div>
+      <% } else { %>
+        <span class="ws-muted">—</span>
+      <% } %>
+    </dd>
+    <dt>Resource id</dt>
+    <dd class="ws-mono">
+      <%= event.request_data.resourceId === null || event.request_data.resourceId === undefined ? '—' : event.request_data.resourceId %>
+    </dd>
+    <dt>User agent</dt>
+    <dd class="ws-small ws-dim ws-break"><%= event.request_data.userAgent || '—' %></dd>
+  </dl>
+  <p class="ws-card__note">
+    Only these four fields are captured from the request, plus the outcome basis above, which records how the result was
+    decided. Credentials, cookies, session identifiers and authorization headers are never copied into an event or an
+    evidence package.
+  </p>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">Timeline</div>
+  <ul class="ws-timeline">
+    <% for (const stage of timeline) { %>
+      <li class="<%= stage.derived ? '' : 'is-key' %>">
+        <div class="ws-timeline__stage"><%= stage.stage %></div>
+        <div class="ws-timeline__time">
+          <%= formatTimestamp(stage.at) %><% if (stage.note) { %> · <%= stage.note %><% } %>
+        </div>
+      </li>
+    <% } %>
+  </ul>
+  <p class="ws-card__note">
+    Stages 1–4 derive from one recorded event: the system stores a single <code>occurred_at</code> timestamp. Only
+    "Investigation Opened" carries an independently recorded time. No intermediate times are invented.
+  </p>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">Recommended mitigation</div>
+  <p class="ws-mb-0"><%= mitigation %></p>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">Evidence package</div>
+  <form method="post" action="/forensics/<%= event.event_uuid %>/export" class="ws-toolbar">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="ws-btn ws-btn--primary" type="submit">Export evidence package</button>
+    <a class="ws-btn ws-btn--secondary" href="/forensics/verify">Verify an exported file</a>
+  </form>
+
+  <% if (latestExport) { %>
+    <div class="ws-rule"></div>
+    <dl class="ws-kv ws-kv--rows">
+      <dt>Latest export</dt>
+      <dd><%= formatTimestamp(latestExport.occurred_at) %></dd>
+      <dt>File name</dt>
+      <dd class="ws-mono ws-small ws-break"><%= latestExport.evidence_filename %></dd>
+      <dt>SHA-256</dt>
+      <dd>
+        <div class="ws-payload">
+          <span class="ws-hash" id="evidence-hash"><%= latestExport.evidence_sha256 %></span>
+          <button class="ws-copy" type="button" data-copy="#evidence-hash">Copy</button>
+        </div>
+      </dd>
+      <dt>Download</dt>
+      <dd>
+        <a class="ws-btn ws-btn--secondary ws-btn--small"
+           href="/forensics/<%= event.event_uuid %>/evidence/<%= latestExport.evidence_filename %>">
+          Download the exported bytes
+        </a>
+        <div class="ws-small ws-muted ws-mt-3">These are the exact bytes that were hashed.</div>
+      </dd>
+    </dl>
+  <% } else { %>
+    <p class="ws-card__note ws-mb-0">No evidence package has been exported for this incident yet.</p>
+  <% } %>
+
+  <p class="ws-card__note"><%= disclaimer %></p>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">Incident actions</div>
+  <% if (actions.length === 0) { %>
+    <div class="ws-empty">
+      <div class="ws-empty__title">No actions recorded yet</div>
+      Open the investigation or export the evidence to start the trail.
+    </div>
+  <% } else { %>
+    <div class="ws-table-scroll">
+      <table class="ws-table ws-table--compact">
+        <thead><tr><th>Timestamp</th><th>Action</th><th>Detail</th><th>File</th><th>Hash</th><th>By</th></tr></thead>
+        <tbody>
+          <% for (const action of actions) { %>
+            <tr>
+              <td class="ws-small ws-nowrap"><%= formatTimestamp(action.occurred_at) %></td>
+              <td class="ws-small ws-nowrap"><%= action.action %></td>
+              <td class="ws-small ws-dim"><%= action.description %></td>
+              <td class="ws-mono ws-small"><%= action.evidence_filename || '—' %></td>
+              <td class="ws-mono ws-small ws-nowrap"><%= action.evidence_sha256 ? action.evidence_sha256.slice(0, 16) + '…' : '—' %></td>
+              <td class="ws-small ws-nowrap"><%= action.performed_by_email || '—' %></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<div class="ws-toolbar">
+  <a class="ws-btn ws-btn--secondary" href="/security/events">Back to Security Events</a>
+</div>
+
+<%- include('../partials/foot') %>

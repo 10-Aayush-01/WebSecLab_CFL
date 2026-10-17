@@ -1,0 +1,14 @@
+node_modules/
+.env
+npm-debug.log*
+*.log
+
+# Generated evidence packages are per-run artifacts, never committed
+exports/*.json
+exports/*/*
+
+# Local server bookkeeping
+.run/
+
+# The install transcript written while bootstrapping the project
+.install.log

@@ -1,0 +1,68 @@
+<%
+  const scripts = ['/js/forensics.js'];
+%>
+<%- include('../partials/head', { title: title, pageTitle: pageTitle, purpose: purpose, breadcrumb: 'Verify Evidence', pageScripts: scripts }) %>
+
+<div class="ws-card ws-card--form">
+  <div class="ws-card__title">Re-hash an exported evidence file</div>
+  <p class="ws-dim">
+    Choose a previously exported evidence JSON file. The browser reads it as text and sends the contents to the server,
+    which recomputes the SHA-256 and compares it with the hash recorded at export time.
+  </p>
+
+  <form id="verify-form" method="post" action="/forensics/verify" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="ws-form__row">
+      <label class="ws-form__label" for="evidence-file">Evidence file</label>
+      <input class="ws-input" id="evidence-file" name="file" type="file" accept=".json,application/json" required
+             aria-describedby="file-help">
+      <div class="ws-form__hint" id="file-help">
+        The file is re-hashed in the browser-to-server round trip; nothing is uploaded anywhere else.
+      </div>
+    </div>
+    <div class="ws-form-actions">
+      <button class="ws-btn ws-btn--primary" id="verify-submit" type="submit">Verify integrity</button>
+      <span class="ws-small ws-muted">Editing one character of the file is enough to make this fail.</span>
+    </div>
+  </form>
+
+  <div id="verify-result" class="ws-mt-4" aria-live="polite"></div>
+
+  <p class="ws-card__note"><%= disclaimer %></p>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">
+    <span>Evidence registry</span>
+    <span class="ws-small ws-muted"><%= exports.length %> export<%= exports.length === 1 ? '' : 's' %></span>
+  </div>
+  <% if (exports.length === 0) { %>
+    <div class="ws-empty">
+      <div class="ws-empty__title">No evidence has been exported yet</div>
+      Open an incident from Security Events and export its evidence package first.
+    </div>
+  <% } else { %>
+    <div class="ws-table-scroll">
+      <table class="ws-table">
+        <thead><tr><th>Exported</th><th>Incident</th><th>Type</th><th>File</th><th>SHA-256</th><th></th></tr></thead>
+        <tbody>
+          <% for (const item of exports) { %>
+            <tr>
+              <td class="ws-small ws-nowrap"><%= formatTimestamp(item.occurred_at) %></td>
+              <td><a class="ws-mono ws-small" href="/forensics/<%= item.event_uuid %>" title="<%= item.event_uuid %>"><%= shortId(item.event_uuid) %></a></td>
+              <td class="ws-small ws-nowrap"><%= item.attack_type %></td>
+              <td class="ws-mono ws-small ws-break"><%= item.evidence_filename %></td>
+              <td class="ws-mono ws-small ws-break"><%= item.evidence_sha256 %></td>
+              <td class="ws-table__row-link">
+                <a class="ws-btn--link" href="/forensics/<%= item.event_uuid %>/evidence/<%= item.evidence_filename %>">Download</a>
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <p class="ws-card__note">Download a file from this table, then select it above to verify it.</p>
+  <% } %>
+</div>
+
+<%- include('../partials/foot', { pageScripts: scripts }) %>

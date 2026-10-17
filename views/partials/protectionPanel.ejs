@@ -1,0 +1,28 @@
+<%
+  // This panel describes the ATTEMPT, not just the setting: in a residual-risk
+  // case the controls were skipped even though the global mode says SAFE, and a
+  // panel claiming "parameterized query ON" above a page that shows the leak
+  // would be the panel lying.
+  const panelMode = locals.residualRisk === true ? (mode === 'SAFE' ? 'VULNERABLE' : 'SAFE') : mode;
+  const controls = lab.protectionStatus(panelMode);
+  const activeCount = controls.filter((control) => control.on).length;
+%>
+<div class="ws-card">
+  <div class="ws-card__title">
+    <span>Protection status</span>
+    <span class="ws-badge ws-badge--<%= panelMode === 'VULNERABLE' ? 'critical' : 'neutral' %> ws-badge--no-dot">
+      <%= activeCount %> / <%= controls.length %> controls on
+    </span>
+  </div>
+  <ul class="ws-status-list">
+    <% for (const control of controls) { %>
+      <li>
+        <span>
+          <%= control.name %>
+          <% if (control.always) { %><span class="ws-muted ws-small">always on</span><% } %>
+        </span>
+        <span class="ws-state ws-state--<%= control.on ? 'on' : 'off' %>"><%= control.on ? 'ON' : 'OFF' %></span>
+      </li>
+    <% } %>
+  </ul>
+</div>
