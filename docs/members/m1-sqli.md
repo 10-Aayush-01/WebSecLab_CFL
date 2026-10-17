@@ -6,6 +6,10 @@ opening, the architecture, and **SQL injection**. This is the same text as
 print only your own pages.
 
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
 The `Say:` lines are the script — read them out, or paraphrase them, but keep the
 meaning. The `Do:` lines are what your hands are doing while you talk, and they
 never need narrating. **Bold** lines must be said out loud verbatim, because they
