@@ -1,0 +1,77 @@
+<%- include('../partials/head', { title: title, pageTitle: pageTitle, purpose: purpose, breadcrumb: 'Labs / IDOR' }) %>
+
+<% if (isVulnerable) { %>
+  <div class="ws-banner ws-banner--warning">
+    <div class="ws-banner__body">
+      <span class="ws-banner__title">Intentionally insecure behaviour is enabled</span>
+      Documents are returned without an ownership check. Local lab testing only.
+    </div>
+  </div>
+<% } %>
+
+<%- include('../partials/protectionPanel', { lab: lab, mode: mode }) %>
+
+<div class="ws-card">
+  <div class="ws-card__title">What this lab shows</div>
+  <p><%= lab.explanation %></p>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">
+    <span>Your documents</span>
+    <span class="ws-small ws-muted">no security event is recorded for these</span>
+  </div>
+  <% if (documents.length === 0) { %>
+    <div class="ws-empty">
+      <div class="ws-empty__title">This account owns no documents</div>
+      Run <code>npm run db:seed</code> to create the sample set.
+    </div>
+  <% } else { %>
+    <div class="ws-table-scroll">
+      <table class="ws-table">
+        <thead><tr><th>Id</th><th>Title</th><th>Created</th><th>Request path</th><th></th></tr></thead>
+        <tbody>
+          <% for (const document of documents) { %>
+            <tr>
+              <td class="ws-id"><%= document.id %></td>
+              <td><%= document.title %></td>
+              <td class="ws-small ws-dim ws-nowrap"><%= formatTimestamp(document.created_at) %></td>
+              <td class="ws-small ws-nowrap">
+                <span class="ws-flex">
+                  <span class="ws-mono" id="doc-path-<%= document.id %>">/labs/idor/documents/<%= document.id %></span>
+                  <%- include('../partials/copyButton', { target: `doc-path-${document.id}`, label: `the request path for document ${document.id}` }) %>
+                </span>
+              </td>
+              <td class="ws-table__row-link"><a class="ws-btn--link" href="/labs/idor/documents/<%= document.id %>">Open</a></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">Open a document by id</div>
+  <form method="get" action="/labs/idor/open" class="ws-inline">
+    <div class="ws-inline__grow">
+      <label class="ws-form__label" for="id">Document id</label>
+      <input class="ws-input ws-input--mono" id="id" name="id" type="number" min="1" step="1" value=""
+             autocomplete="off" aria-describedby="id-help">
+      <div class="ws-form__hint" id="id-help">
+        The seeded database holds <%= range.total %> documents with ids <%= range.lowest %>–<%= range.highest %>.
+      </div>
+    </div>
+    <button class="ws-btn ws-btn--primary" type="submit">Open document</button>
+  </form>
+  <p class="ws-card__note">
+    In Burp Repeater, send the request for your own document and change the trailing id — the ids are sequential on purpose.
+    Copy any request path above to get the exact request without retyping it.
+  </p>
+</div>
+
+<%- include('../partials/comparisonTable', { lab: lab }) %>
+
+<p class="ws-small ws-muted"><%= lab.note %></p>
+
+<%- include('../partials/foot') %>
