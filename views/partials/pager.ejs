@@ -1,0 +1,21 @@
+<%
+  const pageHref = (target) => {
+    const query = new URLSearchParams();
+    if (filters.type) query.set('type', filters.type);
+    if (filters.severity) query.set('severity', filters.severity);
+    if (filters.result) query.set('result', filters.result);
+    if (filters.search) query.set('search', filters.search);
+    query.set('page', String(target));
+    return `/security/events?${query.toString()}`;
+  };
+%>
+<div class="ws-pager">
+  <span><%= total %> event<%= total === 1 ? '' : 's' %> · page <%= page %> of <%= pages %></span>
+  <span class="ws-pager__spacer"></span>
+  <a class="ws-btn ws-btn--secondary ws-btn--small <%= page <= 1 ? 'is-disabled' : '' %>"
+     href="<%= page > 1 ? pageHref(page - 1) : '#' %>"
+     <%= page <= 1 ? 'aria-disabled="true" tabindex="-1"' : '' %>>Previous</a>
+  <a class="ws-btn ws-btn--secondary ws-btn--small <%= page >= pages ? 'is-disabled' : '' %>"
+     href="<%= page < pages ? pageHref(page + 1) : '#' %>"
+     <%= page >= pages ? 'aria-disabled="true" tabindex="-1"' : '' %>>Next</a>
+</div>

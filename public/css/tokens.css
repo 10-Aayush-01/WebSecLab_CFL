@@ -1,0 +1,299 @@
+/* ==========================================================================
+   WebSecLab — design tokens
+   --------------------------------------------------------------------------
+   Two layers:
+     1. Primitive scales (spacing, type, radii) — theme independent.
+     2. Semantic tokens (surface, text, border, status) — swapped per theme.
+
+   Theming strategy (no flash, no inline script, works without JavaScript):
+     - :root                      → light theme
+     - :root[data-theme="dark"]   → dark theme, rendered server-side from the
+                                    `ws_theme` cookie for the first paint
+     - @media (prefers-color-scheme: dark) :root:not([data-theme])
+                                  → "system": follows the OS when the visitor
+                                    has expressed no preference
+   `ws_theme=system` renders NO data-theme attribute on purpose, which is what
+   hands control to the media query. JavaScript only rewrites the attribute and
+   the cookie when the user picks a theme.
+   ========================================================================== */
+
+/* ---------------------------------------------------------- 1. primitives */
+:root {
+  /* 8px spacing scale */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* radii */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --radius-pill: 999px;
+
+  /* type */
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --leading-tight: 1.25;
+  --leading-base: 1.55;
+
+  /* layout */
+  --topbar-h: 56px;
+  --sidebar-w: 236px;
+  --content-max: 1200px;
+  --field-h: 34px;
+
+  /* motion (kept minimal; everything respects reduced-motion below) */
+  --duration: 120ms;
+  --ease: cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+/* ------------------------------------------------------- 2. light theme */
+:root {
+  color-scheme: light;
+
+  --brand: #1f3a5f;
+  --brand-strong: #16283f;
+  --brand-soft: #eaf0f7;
+
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #f8fafb;
+  --surface-3: #eef2f6;
+  --sidebar-bg: #ffffff;
+  --sidebar-active-bg: #eef3f9;
+
+  --topbar-bg: #1f3a5f;
+  --topbar-text: #ffffff;
+  --topbar-muted: #c3d0e0;
+  --topbar-border: #16283f;
+  --topbar-control-border: #55708f;
+
+  --text: #1f2933;
+  --text-2: #526273;
+  --text-3: #6b7280;
+  --text-inverse: #ffffff;
+
+  --border: #d9dee5;
+  --border-subtle: #e8edf2;
+  --border-strong: #c2cad4;
+
+  --accent: #1f3a5f;
+  --accent-hover: #16283f;
+  --accent-soft: #eaf0f7;
+  --on-accent: #ffffff;
+  --link: #1f3a5f;
+
+  --focus: #7fa6d6;
+  --focus-ring: 0 0 0 3px rgba(127, 166, 214, 0.45);
+
+  --danger: #b42318;
+  --danger-bg: #fdecea;
+  --danger-border: #f0c2bc;
+  --danger-solid-text: #ffffff;
+
+  --success: #2e7d32;
+  --success-bg: #e8f3e9;
+  --success-border: #bcd9bf;
+
+  --warning: #b7791f;
+  --warning-bg: #fdf3dc;
+  --warning-border: #e8d4a2;
+  --warning-text: #6b4a12;
+
+  --info: #24405e;
+  --info-bg: #eef3f9;
+  --info-border: #ccdae9;
+
+  --neutral-bg: #eef1f4;
+  --neutral-text: #526273;
+  --neutral-border: #dde2e8;
+
+  --code-bg: #f7f9fb;
+  --code-border: #e3e8ee;
+  --code-text: #1f2933;
+
+  --row-hover: #f7f9fb;
+  --overlay: rgba(15, 20, 26, 0.45);
+  --chart-grid: #e3e8ee;
+  --chart-series-1: #1f3a5f;
+  --chart-series-2: #7c8fa3;
+  --chart-series-3: #b42318;
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+/* -------------------------------------------------------- 3. dark theme */
+/* Duplicated for the explicit attribute and the system media query: there is
+   no preprocessor in this project, and duplicating a token block is cheaper
+   than shipping a build step. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --brand: #4e8fd1;
+  --brand-strong: #6ba4e0;
+  --brand-soft: #1b2735;
+
+  --bg: #0e1319;
+  --surface: #151b23;
+  --surface-2: #1a212b;
+  --surface-3: #1f2732;
+  --sidebar-bg: #111720;
+  --sidebar-active-bg: #1b2735;
+
+  --topbar-bg: #0a0e14;
+  --topbar-text: #e8eef6;
+  --topbar-muted: #8b9aad;
+  --topbar-border: #1d2632;
+  --topbar-control-border: #33404f;
+
+  --text: #e4e9f0;
+  --text-2: #a3b1c2;
+  --text-3: #85929f;
+  --text-inverse: #0b1017;
+
+  --border: #26303c;
+  --border-subtle: #1e2732;
+  --border-strong: #35414f;
+
+  --accent: #5b9bd5;
+  --accent-hover: #78b0e3;
+  --accent-soft: #182432;
+  --on-accent: #08111c;
+  --link: #6fade2;
+
+  --focus: #5b9bd5;
+  --focus-ring: 0 0 0 3px rgba(91, 155, 213, 0.4);
+
+  --danger: #ff9084;
+  --danger-bg: #331a17;
+  --danger-border: #572c27;
+  --danger-solid-text: #2a0f0c;
+
+  --success: #7fd18a;
+  --success-bg: #14291a;
+  --success-border: #2b4a33;
+
+  --warning: #f0c674;
+  --warning-bg: #302613;
+  --warning-border: #4d3d1c;
+  --warning-text: #f0c674;
+
+  --info: #8fbfe8;
+  --info-bg: #16232f;
+  --info-border: #2a3d4e;
+
+  --neutral-bg: #1e2632;
+  --neutral-text: #a3b1c2;
+  --neutral-border: #2a3441;
+
+  --code-bg: #101720;
+  --code-border: #202a36;
+  --code-text: #d7e2ee;
+
+  --row-hover: #1a212b;
+  --overlay: rgba(3, 6, 10, 0.6);
+  --chart-grid: #232d39;
+  --chart-series-1: #5b9bd5;
+  --chart-series-2: #85929f;
+  --chart-series-3: #e4574c;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+
+    --brand: #4e8fd1;
+    --brand-strong: #6ba4e0;
+    --brand-soft: #1b2735;
+
+    --bg: #0e1319;
+    --surface: #151b23;
+    --surface-2: #1a212b;
+    --surface-3: #1f2732;
+    --sidebar-bg: #111720;
+    --sidebar-active-bg: #1b2735;
+
+    --topbar-bg: #0a0e14;
+    --topbar-text: #e8eef6;
+    --topbar-muted: #8b9aad;
+    --topbar-border: #1d2632;
+    --topbar-control-border: #33404f;
+
+    --text: #e4e9f0;
+    --text-2: #a3b1c2;
+    --text-3: #85929f;
+    --text-inverse: #0b1017;
+
+    --border: #26303c;
+    --border-subtle: #1e2732;
+    --border-strong: #35414f;
+
+    --accent: #5b9bd5;
+    --accent-hover: #78b0e3;
+    --accent-soft: #182432;
+    --on-accent: #08111c;
+    --link: #6fade2;
+
+    --focus: #5b9bd5;
+    --focus-ring: 0 0 0 3px rgba(91, 155, 213, 0.4);
+
+    --danger: #ff9084;
+    --danger-bg: #331a17;
+    --danger-border: #572c27;
+    --danger-solid-text: #2a0f0c;
+
+    --success: #7fd18a;
+    --success-bg: #14291a;
+    --success-border: #2b4a33;
+
+    --warning: #f0c674;
+    --warning-bg: #302613;
+    --warning-border: #4d3d1c;
+    --warning-text: #f0c674;
+
+    --info: #8fbfe8;
+    --info-bg: #16232f;
+    --info-border: #2a3d4e;
+
+    --neutral-bg: #1e2632;
+    --neutral-text: #a3b1c2;
+    --neutral-border: #2a3441;
+
+    --code-bg: #101720;
+    --code-border: #202a36;
+    --code-text: #d7e2ee;
+
+    --row-hover: #1a212b;
+    --overlay: rgba(3, 6, 10, 0.6);
+    --chart-grid: #232d39;
+    --chart-series-1: #5b9bd5;
+    --chart-series-2: #85929f;
+    --chart-series-3: #e4574c;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ------------------------------------------------------------ 4. motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

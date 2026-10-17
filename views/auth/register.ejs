@@ -1,0 +1,45 @@
+<%- include('../partials/head', { layout: 'auth', title: 'Create account', pageTitle: 'Create account' }) %>
+
+<div class="ws-card ws-card--form">
+  <div class="ws-card__title">Create account</div>
+  <p class="ws-small ws-muted">New accounts receive the USER role. Administrator accounts are seeded only.</p>
+
+  <% for (const error of errors) { %>
+    <div class="ws-banner ws-banner--danger">
+      <div class="ws-banner__body"><%= error.message %></div>
+    </div>
+  <% } %>
+
+  <form method="post" action="/register" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="ws-form__row">
+      <label class="ws-form__label" for="name">Full name</label>
+      <input class="ws-input" id="name" name="name" type="text" value="<%= values.name || '' %>"
+             autocomplete="name" required autofocus>
+    </div>
+    <div class="ws-form__row">
+      <label class="ws-form__label" for="email">Email</label>
+      <input class="ws-input" id="email" name="email" type="email" value="<%= values.email || '' %>"
+             autocomplete="username" required>
+    </div>
+    <div class="ws-form__row">
+      <label class="ws-form__label" for="password">Password</label>
+      <input class="ws-input" id="password" name="password" type="password" autocomplete="new-password" required
+             aria-describedby="password-help">
+      <div class="ws-form__hint" id="password-help">
+        At least 8 characters. Stored as a bcrypt hash with cost 11 — never in plain text.
+      </div>
+    </div>
+    <div class="ws-form__row">
+      <label class="ws-form__label" for="confirmPassword">Confirm password</label>
+      <input class="ws-input" id="confirmPassword" name="confirmPassword" type="password"
+             autocomplete="new-password" required>
+    </div>
+    <div class="ws-form-actions">
+      <button class="ws-btn ws-btn--primary" type="submit">Create account</button>
+      <a class="ws-btn--link" href="/login">Back to sign in</a>
+    </div>
+  </form>
+</div>
+
+<%- include('../partials/foot', { layout: 'auth' }) %>

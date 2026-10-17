@@ -1,0 +1,159 @@
+<%
+  const scripts = ['/vendor/chart.js/chart.umd.min.js', '/js/dashboard.js'];
+  const deltaLabel = (d) => (d.delta > 0 ? `+${d.delta}` : `${d.delta}`);
+%>
+<%- include('partials/head', { title: title, pageTitle: pageTitle, purpose: purpose, breadcrumb: 'Dashboard', pageScripts: scripts }) %>
+
+<div class="ws-metrics">
+  <div class="ws-metric">
+    <span class="ws-metric__label">Monitored requests</span>
+    <span class="ws-metric__value"><%= summary.monitored_requests %></span>
+    <span class="ws-metric__foot">
+      <span class="ws-delta ws-delta--<%= deltas.monitored.direction %>"><%= deltaLabel(deltas.monitored) %></span>
+      <span>last 24h vs previous</span>
+    </span>
+  </div>
+  <div class="ws-metric">
+    <span class="ws-metric__label">Security events</span>
+    <span class="ws-metric__value"><%= summary.total_events %></span>
+    <span class="ws-metric__foot">
+      <span class="ws-delta ws-delta--<%= deltas.events.direction %>"><%= deltaLabel(deltas.events) %></span>
+      <span><%= summary.flagged_requests %> flagged</span>
+    </span>
+  </div>
+  <div class="ws-metric">
+    <span class="ws-metric__label">Successful attacks</span>
+    <span class="ws-metric__value"><%= summary.successful_attacks %></span>
+    <span class="ws-metric__foot">result = SUCCESSFUL</span>
+  </div>
+  <div class="ws-metric">
+    <span class="ws-metric__label">Blocked or neutralized</span>
+    <span class="ws-metric__value"><%= summary.blocked_attacks %></span>
+    <span class="ws-metric__foot">protections stopped these</span>
+  </div>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">
+    <span>Lifecycle</span>
+    <span class="ws-badge ws-badge--<%= securityMode === 'VULNERABLE' ? 'critical' : 'neutral' %> ws-badge--no-dot"><%= securityMode %></span>
+  </div>
+  <div class="ws-flow">
+    <span class="ws-flow__step">Attack</span>
+    <span class="ws-flow__arrow">→</span>
+    <span class="ws-flow__step">Detect</span>
+    <span class="ws-flow__arrow">→</span>
+    <span class="ws-flow__step">Log</span>
+    <span class="ws-flow__arrow">→</span>
+    <span class="ws-flow__step ws-flow__step--active">Investigate</span>
+    <span class="ws-flow__arrow">→</span>
+    <span class="ws-flow__step">Secure</span>
+    <span class="ws-flow__arrow">→</span>
+    <span class="ws-flow__step">Re-test</span>
+  </div>
+  <p class="ws-card__note">
+    Active step: investigation. Every detected attempt is inspectable from <a href="/security/events">Security Events</a>.
+  </p>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">Global security mode</div>
+  <div class="ws-inline">
+    <div class="ws-inline__grow">
+      <p class="ws-mb-0">
+        Currently <strong><%= securityMode %></strong>.
+        <% if (securityMode === 'VULNERABLE') { %>
+          The three lab routes are intentionally insecure until you switch back to SAFE.
+        <% } else { %>
+          All three labs enforce parameterized queries, output escaping and ownership checks.
+        <% } %>
+      </p>
+      <p class="ws-small ws-muted ws-mb-0 ws-mt-3">
+        Stored in the single-row <code>app_settings</code> table and read on every request, so the switch applies immediately.
+      </p>
+    </div>
+    <form method="post" action="/admin/mode"
+          <% if (securityMode !== 'VULNERABLE') { %>data-confirm="Switch the global security mode to VULNERABLE? The three labs become intentionally insecure until you switch back."<% } %>>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="redirectTo" value="/dashboard">
+      <button class="ws-btn <%= securityMode === 'VULNERABLE' ? 'ws-btn--secondary' : 'ws-btn--danger' %>" type="submit"
+              name="mode" value="<%= securityMode === 'VULNERABLE' ? 'SAFE' : 'VULNERABLE' %>">
+        Switch to <%= securityMode === 'VULNERABLE' ? 'SAFE' : 'VULNERABLE' %>
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="ws-grid-2 ws-mb-4">
+  <div class="ws-card">
+    <div class="ws-card__title">Attack distribution</div>
+    <div class="ws-chart"><canvas id="chart-distribution" aria-label="Security events by attack type" role="img"></canvas></div>
+  </div>
+  <div class="ws-card">
+    <div class="ws-card__title">Events over time <span class="ws-small ws-muted">last 14 days</span></div>
+    <div class="ws-chart"><canvas id="chart-timeline" aria-label="Security events per day over the last 14 days" role="img"></canvas></div>
+  </div>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">
+    <span>Most recent events</span>
+    <a class="ws-btn--link" href="/security/events">View all</a>
+  </div>
+  <% if (recent.length === 0) { %>
+    <div class="ws-empty">
+      <div class="ws-empty__title">No security events yet</div>
+      Run an attack in one of the three labs to generate the first one.
+    </div>
+  <% } else { %>
+    <div class="ws-table-scroll">
+      <table class="ws-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th><th>Type</th><th>Mode</th><th>Severity</th>
+            <th class="ws-num">Score</th><th>Result</th><th>Endpoint</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% for (const row of recent) { %>
+            <tr>
+              <td class="ws-small ws-nowrap"><%= formatTimestamp(row.occurred_at) %></td>
+              <td class="ws-small"><%= row.attack_type %></td>
+              <td class="ws-small"><%= row.security_mode %></td>
+              <td><%- include('partials/severityBadge', { severity: row.severity }) %></td>
+              <td class="ws-num"><%= row.risk_score %></td>
+              <td>
+                <%- include('partials/resultBadge', { result: row.result }) %>
+                <% if (row.outcome_basis === 'RESIDUAL_RISK') { %>
+                  <span class="ws-badge ws-badge--medium ws-badge--no-dot" title="The residual-risk model skipped the SAFE controls for this attempt.">residual risk</span>
+                <% } %>
+              </td>
+              <td class="ws-mono ws-small"><%= row.endpoint %></td>
+              <td class="ws-table__row-link"><a class="ws-btn--link" href="/forensics/<%= row.event_uuid %>">Investigate</a></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<div class="ws-card">
+  <div class="ws-card__title">Lab data available</div>
+  <dl class="ws-kv ws-kv--rows">
+    <dt>Products (SQLi lab)</dt>
+    <dd><%= summary.products %>, of which <strong><%= summary.hidden_products %> unreleased</strong> — the hidden-data demonstration</dd>
+    <dt>Comments (XSS lab)</dt>
+    <dd><%= summary.comments %></dd>
+    <dt>Documents (IDOR lab)</dt>
+    <dd><%= summary.documents %>, sequential ids across the seeded accounts</dd>
+    <dt>Events by mode</dt>
+    <dd>
+      <% const safeCount = (modeSplit.find((row) => row.security_mode === 'SAFE') || {}).total || 0; %>
+      <% const vulnCount = (modeSplit.find((row) => row.security_mode === 'VULNERABLE') || {}).total || 0; %>
+      <%= safeCount %> recorded in SAFE · <%= vulnCount %> recorded in VULNERABLE
+    </dd>
+  </dl>
+</div>
+
+<%- include('partials/foot', { pageScripts: scripts }) %>
